@@ -64,12 +64,13 @@ public class PPMAnalyzer {
             writer.println("P3");
             writer.println(width + " " + height);
             writer.println(maxColorValue);
+            writer.println();
 
             for (int i = 0; i < height; i++) {
                 for (int j = 0; j < width; j++) {
-                    writer.println(pixels[i][j][0] + " " + pixels[i][j][1] + " " + pixels[i][j][2]);
+                    writer.print(pixels[i][j][0] + " " + pixels[i][j][1] + " " + pixels[i][j][2]);
                     if (j < width - 1) {
-                        writer.print(" ");
+                        writer.print("  ");
                     }
                 }
                 writer.println();
