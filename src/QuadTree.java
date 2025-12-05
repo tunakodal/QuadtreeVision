@@ -49,9 +49,9 @@ public class QuadTree {
         double total_error = 0;
         for (int j = y; j < y + size; j++) {
             for (int i = x; i < x + size; i++) {
-                int dr = pixels[y][x][0] - mean_r;
-                int dg = pixels[y][x][1] - mean_g;
-                int db = pixels[y][x][2] - mean_b;
+                int dr = pixels[j][i][0] - mean_r;
+                int dg = pixels[j][i][1] - mean_g;
+                int db = pixels[j][i][2] - mean_b;
 
                 total_error += (dr*dr + dg*dg + db*db); // Normally (/count), post-division due to the casting problems,
             }
