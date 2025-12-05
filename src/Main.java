@@ -30,12 +30,12 @@ public class Main {
         }
 
         if (input_file == null || output_file == null) {
-            System.out.println("Input or output file not specified. Invalıd arguments.");
+            System.out.println("Input or output file not specified. Invalid arguments.");
             return;
         }
 
         if (!compression_flag && !edge_flag) {
-            System.out.println("Either -c or -e must specified.");
+            System.out.println("Either -c or -e must be specified.");
             return;
         }
 
@@ -68,10 +68,7 @@ public class Main {
 
                 int leafCount = qt.countLeaves();
                 double achievedLevel = (double) leafCount / (double) (width * height);
-                String achievedLevelString = String.valueOf(achievedLevel);
-                achievedLevelString = String.format("%.5f", achievedLevel);
-
-
+                String achievedLevelString = String.format("%.5f", achievedLevel);
 
                 System.out.println("Image " + (i + 1) + ":");
                 System.out.println(" -Target compression level : " + compression_levels[i]);
