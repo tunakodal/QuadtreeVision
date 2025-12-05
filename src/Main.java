@@ -77,8 +77,7 @@ public class Main {
                 System.out.println(" -Achieved compression lvl : " + achievedLevelString);
                 System.out.println();
 
-                String output_file_name = output_file.substring(0,output_file.indexOf("."));
-                String output_name = output_file_name + "-" + (i+1) + ".ppm";
+                String output_name = output_file + "-" + (i+1) + ".ppm";
 
                 PPMAnalyzer.write_PPM(output_name, outImage);
             }
@@ -90,8 +89,7 @@ public class Main {
             QuadTree qt = new QuadTree(image, defaultThreshold);
             PPMImage outImage = qt.edgeDetect(outline_flag);
 
-            String output_file_name = output_file.substring(0,output_file.indexOf("."));
-            String output_name = output_file_name + ".ppm";
+            String output_name = output_file + ".ppm";
 
             PPMAnalyzer.write_PPM(output_name, outImage);
         }
