@@ -78,7 +78,8 @@ public class QuadTree {
     }
     //============
 
-    //--Methods--
+    //--Compression Methods--
+
     public QuadNode buildQuadTree(int[][][] pixels, int x, int y, int size, double threshold){
         Stats stats = computeStats(pixels, x, y, size);
 
@@ -136,7 +137,7 @@ public class QuadTree {
                 }
             }
             if (drawOutline && quadNode.size > 1){
-                drawBorder(quadNode, pixels);
+                drawBorderBlack(quadNode, pixels);
             }
         }
         else {
@@ -148,23 +149,173 @@ public class QuadTree {
         return pixels;
     }
 
-    private void drawBorder(QuadNode node, int[][][] pixels) {
+
+    //--Border Drawing for Compression--
+
+    private void drawBorderBlack(QuadNode node, int[][][] pixels) {
         int x0 = node.x;
         int y0 = node.y;
         int x1 = node.x + node.size - 1;
         int y1 = node.y + node.size - 1;
 
         for (int x = x0; x <= x1; x++) {
-            setPixel(pixels, x, y0, 0, 0, 0);
-            setPixel(pixels, x, y1, 0, 0, 0);
+            setPixelBlack(pixels, x, y0, 0, 0, 0);
+            setPixelBlack(pixels, x, y1, 0, 0, 0);
         }
         for (int y = y0; y <= y1; y++) {
-            setPixel(pixels, x0, y, 0, 0, 0);
-            setPixel(pixels, x1, y, 0, 0, 0);
+            setPixelBlack(pixels, x0, y, 0, 0, 0);
+            setPixelBlack(pixels, x1, y, 0, 0, 0);
         }
     }
 
-    private void setPixel(int[][][] pixels, int x, int y, int r, int g, int b) {
+    private void setPixelBlack(int[][][] pixels, int x, int y, int r, int g, int b) {
+        pixels[y][x][0] = r;
+        pixels[y][x][1] = g;
+        pixels[y][x][2] = b;
+    }
+    
+    
+    //--Edge Detection Methods--
+    
+    private static final int EDGE_THRESHOLD = 8;
+    
+    public PPMImage edgeDetect(boolean drawOutline){
+        int width = image.getWidth();
+        int height = image.getHeight();
+        int maxColorValue = image.getMaxColorValue();
+        int[][][] inPixels = image.getPixels();
+
+        PPMImage ppmImage = new PPMImage(width, height, maxColorValue);
+        int[][][] outPixels = ppmImage.getPixels();
+
+        // Avoiding edge controls for simplicity (draw black)
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                outPixels[y][x][0] = 0;
+                outPixels[y][x][1] = 0;
+                outPixels[y][x][2] = 0;
+            }
+        }
+
+        edgeDetectAux(root, inPixels, outPixels);
+
+        if (drawOutline){
+            ppmImage.setPixels(drawAllImageWhite(outPixels));
+        }
+        else {
+            ppmImage.setPixels(outPixels);
+        }
+
+        return ppmImage;
+    }
+
+    private void edgeDetectAux(QuadNode node,
+                               int[][][] inPixels,
+                               int[][][] outPixels) {
+
+        if (node.size == EDGE_THRESHOLD || node.isLeaf) {
+
+            if (node.size == EDGE_THRESHOLD) {
+                applyEdgeDetection(node, inPixels, outPixels);
+            }
+
+            return;
+        }
+
+        edgeDetectAux(node.NW, inPixels, outPixels);
+        edgeDetectAux(node.NE, inPixels, outPixels);
+        edgeDetectAux(node.SW, inPixels, outPixels);
+        edgeDetectAux(node.SE, inPixels, outPixels);
+    }
+
+    private void applyEdgeDetection(QuadNode node, int[][][] input, int[][][] output) {
+        int x0 = node.x;
+        int y0 = node.y;
+        int size = node.size;
+
+        int height = input.length;
+        int width = input[0].length;
+
+        for (int y = y0; y < y0 + size; y++) {
+            for (int x = x0; x < x0 + size; x++) {
+
+                if (x <= 0 || y <= 0 || x >= width - 1 || y >= height - 1) { // Skip border pixels, we already set them to black
+                    continue;
+                }
+
+                int value = applyEdgeKernelAtPixel(x, y, input);
+
+                if (value < 0)
+                    value = 0;
+
+                if (value > image.getMaxColorValue())
+                    value = image.getMaxColorValue();
+
+                output[y][x][0] = value;
+                output[y][x][1] = value;
+                output[y][x][2] = value;
+            }
+        }
+    }
+
+    private int applyEdgeKernelAtPixel(int x, int y, int[][][] input) {
+        int sum = 0;
+        int[][] kernel = { {-1, -1, -1},  {-1,  8, -1},  {-1, -1, -1} };
+
+        for (int dy = -1; dy <= 1; dy++) { //Convolution
+            for (int dx = -1; dx <= 1; dx++) {
+                int yy = y + dy;
+                int xx = x + dx;
+
+                int r = input[yy][xx][0];
+                int g = input[yy][xx][1];
+                int b = input[yy][xx][2];
+
+                int gray_scale_value = (r + g + b) / 3;
+
+                sum += gray_scale_value * kernel[dy + 1][dx + 1];
+            }
+        }
+
+        return sum;
+    }
+
+    //--Border Drawing for Edge Detection--
+
+    private int[][][] drawAllImageWhite(int[][][] pixels) {
+        return drawAllImageWhiteAux(root, pixels);
+    }
+
+    private int[][][] drawAllImageWhiteAux(QuadNode node, int[][][] pixels) {
+        if (node.isLeaf){
+            drawBorderWhite(node, pixels);
+        }
+        else {
+            drawAllImageWhiteAux(node.NW, pixels);
+            drawAllImageWhiteAux(node.NE, pixels);
+            drawAllImageWhiteAux(node.SW, pixels);
+            drawAllImageWhiteAux(node.SE, pixels);
+        }
+        return pixels;
+    }
+
+    private void drawBorderWhite(QuadNode node, int[][][] pixels) {
+        int x0 = node.x;
+        int y0 = node.y;
+        int x1 = node.x + node.size - 1;
+        int y1 = node.y + node.size - 1;
+
+        for (int x = x0; x <= x1; x++) {
+            setPixelWhite(pixels, x, y0, 255, 255, 255);
+            setPixelWhite(pixels, x, y1, 255, 255, 255);
+        }
+        for (int y = y0; y <= y1; y++) {
+            setPixelWhite(pixels, x0, y, 255, 255, 255);
+            setPixelWhite(pixels, x1, y, 255, 255, 255);
+        }
+    }
+
+    private void setPixelWhite(int[][][] pixels, int x, int y, int r, int g, int b) {
         pixels[y][x][0] = r;
         pixels[y][x][1] = g;
         pixels[y][x][2] = b;
